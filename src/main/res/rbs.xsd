@@ -1,16 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- edited with XMLSpy v2011 rel. 3 sp1 (http://www.altova.com) by user (Closed joint stock company “ZOLOTAYA KORONA” (CJSC “ZOLOTAYA KORONA”)) -->
+<!-- edited with XMLSpy v2011 rel. 3 sp1 (http://www.altova.com) by user (Closed joint stock company “CENTER OF FINANCIAL TECHNOLOGIES” (CJSC “CFT”)) -->
+<!-- edited with XMLSpy v2012 sp1 (http://www.altova.com) by user (CJSC “CFT”) -->
 <!-- edited with XMLSPY v2004 rel. 2 U (http://www.xmlspy.com) by tyr (odin) -->
-<xs:schema 
-  targetNamespace="http://mobiliser.sybase365.com/custom/project/rbs/data/v1_0/beans"
-  xmlns="http://mobiliser.sybase365.com/custom/project/rbs/data/v1_0/beans"
-  
-  xmlns:xdb="http://xmlns.oracle.com/xdb" 
-  xmlns:xs="http://www.w3.org/2001/XMLSchema"
-
-  elementFormDefault="qualified" 
-  attributeFormDefault="unqualified" 
-  version="30">
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xdb="http://xmlns.oracle.com/xdb" elementFormDefault="qualified" attributeFormDefault="unqualified" version="21">
+	<xs:annotation>
+		<xs:documentation>Интерфейс взаимодействия с XML-сервером ЦФТ-Ритейл Банк (на базе Oracle) версии 3.15 и выше</xs:documentation>
+	</xs:annotation>
+	<!--$HeadURL: http://rbs-svn.win.ftc.ru/rbs-prod/SUPPORTED/3.22.006/SERVER/GC/XmlServer/rbsxml.xsd $ $Revision: 41491 $-->
+	<!--Корневой элемент-->
 	<xs:element name="Document">
 		<xs:annotation>
 			<xs:documentation>Документ</xs:documentation>
@@ -56,6 +53,10 @@
 				<xs:element ref="AnsRegularOrders"/>
 				<xs:element ref="ReqCardsInfo"/>
 				<xs:element ref="AnsCardsInfo"/>
+				<xs:element ref="ReqInfoForPAN"/>
+				<xs:element ref="AnsInfoForPAN"/>
+				<xs:element ref="ReqCardStatusInfo"/>
+				<xs:element ref="AnsCardStatusInfo"/>
 				<xs:element ref="ReqAccountExtract"/>
 				<xs:element ref="AnsAccountExtract"/>
 				<xs:element ref="ReqPassportTypes"/>
@@ -77,7 +78,11 @@
 				<xs:element ref="ReqFakturaLink"/>
 				<xs:element ref="AnsFakturaLink"/>
 				<xs:element ref="ReqFakturaUpdate"/>
-				<xs:element ref="AnsFakturaUpdate"/>
+				<xs:element ref="AnsFakturaUpdate">
+					<xs:annotation>
+						<xs:documentation>Ответ на запрос изменения параметров подключения к Сервису Faktura</xs:documentation>
+					</xs:annotation>
+				</xs:element>
 				<xs:element ref="ReqMBLink"/>
 				<xs:element ref="AnsMBLink"/>
 				<xs:element ref="ReqDDLink"/>
@@ -112,6 +117,8 @@
 				<xs:element ref="AnsFindClients"/>
 				<xs:element ref="ReqDogGrReturns"/>
 				<xs:element ref="AnsDogGrReturns"/>
+				<xs:element ref="ReqDelClient"/>
+				<xs:element ref="AnsDelClient"/>
 				<xs:element ref="ReqDogExternalTariffPay">
 					<xs:annotation>
 						<xs:documentation>Взятие тарифа за открытие договора из внешней системы</xs:documentation>
@@ -136,11 +143,18 @@
 				<xs:element ref="AnsAccountBalance"/>
 				<xs:element ref="ReqClientConfirmOrder"/>
 				<xs:element ref="AnsClientConfirmOrder"/>
+				<xs:element ref="ReqZayForDep"/>
+				<xs:element ref="AnsZayForDep"/>
 				<xs:element ref="ReqCardBalance"/>
 				<xs:element ref="AnsCardBalance"/>
-				<xs:element ref="ReqCardStatusInfo"/>
-				<xs:element ref="AnsCardStatusInfo"/>
-
+				<xs:element ref="ReqCreReserv"/>
+				<xs:element ref="AnsCreReserv"/>
+				<xs:element ref="ReqDelReserv"/>
+				<xs:element ref="AnsDelReserv"/>
+				<xs:element ref="ReqMarkBankrot"/>
+				<xs:element ref="AnsMarkBankrot"/>
+				<xs:element ref="ReqAccBySubj"/>
+				<xs:element ref="AnsAccBySubj"/>
 			</xs:choice>
 			<xs:attribute name="docId" use="required">
 				<xs:annotation>
@@ -210,7 +224,7 @@
 			</xs:attribute>
 		</xs:complexType>
 	</xs:element>
-	<xs:element name="ReqPassportTypes" type="xs:string">
+	<xs:element name="ReqPassportTypes" type="xs:string" nillable="true">
 		<xs:annotation>
 			<xs:documentation>Запрос справочника типов документов удостоверения личности</xs:documentation>
 		</xs:annotation>
@@ -479,6 +493,11 @@
 						<xs:documentation>разрешить объединение досье в случае совпадения паспортных данных (Y/N)</xs:documentation>
 					</xs:annotation>
 				</xs:element>
+				<xs:element name="execOnlyFind" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Выполнять только поиск(Y/N)</xs:documentation>
+					</xs:annotation>
+				</xs:element>
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
@@ -582,6 +601,7 @@
 		</xs:annotation>
 		<xs:complexType>
 			<xs:sequence>
+				<xs:element ref="AccOpenRsvParams" minOccurs="0"/>
 				<xs:element name="creditSchemeId">
 					<xs:annotation>
 						<xs:documentation>Идентификатор схемы кредитования</xs:documentation>
@@ -610,7 +630,11 @@
 				<xs:element ref="GoodList" minOccurs="0"/>
 				<xs:element ref="PaysForThirdPersonList" minOccurs="0"/>
 				<xs:choice minOccurs="0">
-					<xs:element ref="Returns" minOccurs="0"/>
+					<xs:element name="Returns" type="ReturnsType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Плановые гашения</xs:documentation>
+						</xs:annotation>
+					</xs:element>
 					<xs:element name="AnnuityAmount" type="FundsType" minOccurs="0">
 						<xs:annotation>
 							<xs:documentation>Сумма аннуитетного платежа</xs:documentation>
@@ -634,6 +658,7 @@
 						<xs:documentation>Процентная ставка по кредиту</xs:documentation>
 					</xs:annotation>
 				</xs:element>
+				<xs:element ref="dependentPercent" minOccurs="0"/>
 				<xs:element name="retDefDay" minOccurs="0">
 					<xs:annotation>
 						<xs:documentation>День погашения в периоде retDefPeriod</xs:documentation>
@@ -657,6 +682,11 @@
 							<xs:enumeration value="2"/>
 						</xs:restriction>
 					</xs:simpleType>
+				</xs:element>
+				<xs:element name="retFirstDay" type="xs:date" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Желаемая дата первого платежа в графике</xs:documentation>
+					</xs:annotation>
 				</xs:element>
 				<xs:element name="codeWord" minOccurs="0">
 					<xs:annotation>
@@ -685,6 +715,27 @@
 					<xs:annotation>
 						<xs:documentation>Сумма неоплаченного товара для рассчета комиссии со счета магазина</xs:documentation>
 					</xs:annotation>
+				</xs:element>
+				<xs:element name="qual" type="QualCreditType" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Настройки, устанавливаемые на договор</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="dependentPercDeltaList" type="dependentPercDeltaListType" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Значение ежегодного снижения условно-зависимой ставки </xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element ref="redemSettlementAcc" minOccurs="0"/>
+				<xs:element name="bpaIssue" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Агент, выполнивший операцию</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:maxLength value="30"/>
+						</xs:restriction>
+					</xs:simpleType>
 				</xs:element>
 			</xs:sequence>
 			<xs:attribute name="subjId" type="xs:string">
@@ -722,6 +773,11 @@
 					</xs:restriction>
 				</xs:simpleType>
 			</xs:attribute>
+			<xs:attribute name="depositSNum" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>12-ти значный номер счета депозитного договора в РБС </xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
 			<xs:attribute name="takeComissionByTariff" type="xs:boolean" use="optional" default="false">
 				<xs:annotation>
 					<xs:documentation>Флаг - брать комиссию через тарифы TAX_KRDOG_OPEN и TAX_KRDOG_PAY</xs:documentation>
@@ -730,6 +786,11 @@
 			<xs:attribute name="withConfirm" type="xs:boolean">
 				<xs:annotation>
 					<xs:documentation>Подтвердить выдачу кредита без дополнительных запросов</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="notifyPhone" type="xs:string" use="optional">
+				<xs:annotation>
+					<xs:documentation>Номер телефона для активации IVR и SMS-информирования</xs:documentation>
 				</xs:annotation>
 			</xs:attribute>
 		</xs:complexType>
@@ -758,7 +819,16 @@
 					</xs:annotation>
 				</xs:element>
 				<xs:element ref="GuaranteeContractList" minOccurs="0"/>
-				<xs:element ref="Returns" minOccurs="0"/>
+				<xs:element name="Returns" type="ReturnsType" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Плановые гашения</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="DependentReturns" type="ReturnsType" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>График гашения по условно-зависимой ставке</xs:documentation>
+					</xs:annotation>
+				</xs:element>
 				<xs:element name="InsuaranceOrder" type="PaymentOrderType" minOccurs="0">
 					<xs:annotation>
 						<xs:documentation>Документ перечисления страхового взноса за кредит</xs:documentation>
@@ -774,6 +844,7 @@
 						</xs:restriction>
 					</xs:simpleType>
 				</xs:element>
+				<xs:element ref="accOpenRsvStatus" minOccurs="0"/>
 			</xs:sequence>
 			<xs:attribute name="reqId" type="xs:string" use="required">
 				<xs:annotation>
@@ -819,7 +890,6 @@
 			<xs:attribute name="reqReqForCreditId" type="xs:string" use="required">
 				<xs:annotation>
 					<xs:documentation>Идентификатор запроса ReqReqForCredit, который подтверждается данным запросом.</xs:documentation>
-
 				</xs:annotation>
 			</xs:attribute>
 			<xs:attribute name="reqReqForDepositId" type="xs:string">
@@ -975,6 +1045,7 @@
 		</xs:annotation>
 		<xs:complexType>
 			<xs:sequence>
+				<xs:element ref="AccOpenRsvParams" minOccurs="0"/>
 				<xs:element name="creditSchemeId">
 					<xs:annotation>
 						<xs:documentation>Идентификатор кредитной схемы</xs:documentation>
@@ -986,6 +1057,12 @@
 					</xs:simpleType>
 				</xs:element>
 				<xs:element ref="FOList" minOccurs="0"/>
+				<xs:element name="openCprAcc" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Открыть счет начисленных процентов (Y)</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element ref="redemSettlementAcc" minOccurs="0"/>
 			</xs:sequence>
 			<xs:attribute name="reqDebtorFormId" type="xs:string" use="required">
 				<xs:annotation>
@@ -1016,6 +1093,7 @@
 		<xs:complexType>
 			<xs:sequence>
 				<xs:element ref="DepositContract"/>
+				<xs:element ref="accOpenRsvStatus" minOccurs="0"/>
 			</xs:sequence>
 			<xs:attribute name="reqId" type="xs:string" use="required">
 				<xs:annotation>
@@ -1344,7 +1422,11 @@
 		</xs:annotation>
 		<xs:complexType>
 			<xs:sequence>
-				<xs:element ref="Returns"/>
+				<xs:element name="Returns" type="ReturnsType">
+					<xs:annotation>
+						<xs:documentation>Плановые гашения</xs:documentation>
+					</xs:annotation>
+				</xs:element>
 				<xs:element ref="juridicalNum"/>
 				<xs:element ref="contractNum"/>
 				<xs:element name="contractDate" type="xs:date">
@@ -1363,12 +1445,83 @@
 					</xs:annotation>
 				</xs:element>
 				<xs:element name="effectivePercent" type="xs:decimal"/>
+				<xs:element name="effectiveMoneyTerms" type="xs:decimal" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Стоимость кредита в денежном выражении</xs:documentation>
+					</xs:annotation>
+				</xs:element>
 				<xs:element name="averageWaightedPercent" type="xs:decimal"/>
 				<xs:element ref="PaysForThirdPersonList"/>
 			</xs:sequence>
 			<xs:attribute name="reqId" type="xs:string" use="required">
 				<xs:annotation>
 					<xs:documentation>Идентификатор запроса ReqClientInfo, на который сформирован данный ответ.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="ReqDelClient">
+		<xs:annotation>
+			<xs:documentation>Запрос для удаления анкеты заемщика</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="fullNameOld">
+					<xs:annotation>
+						<xs:documentation>ФИО клиента в удаляемом досье</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:maxLength value="256"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				<xs:element name="idClientOld">
+					<xs:annotation>
+						<xs:documentation>идентификатор удаляемго досье</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:maxLength value="15"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				<xs:element name="fullNameNew">
+					<xs:annotation>
+						<xs:documentation>ФИО клиента в новом досье</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:maxLength value="256"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				<xs:element name="idClientNew">
+					<xs:annotation>
+						<xs:documentation>идентификатор нового досье, для переноса договоров и карт</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:maxLength value="15"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				<xs:element name="comment" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Обоснование</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="AnsDelClient">
+		<xs:annotation>
+			<xs:documentation>Ответ на запрос удаления анкеты заемщика</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:attribute name="reqId" type="xs:string" use="required">
+				<xs:annotation>
+					<xs:documentation>Идентификатор запроса ReqDelClient, на который сформирован данный ответ.</xs:documentation>
 				</xs:annotation>
 			</xs:attribute>
 		</xs:complexType>
@@ -1540,6 +1693,11 @@
 							</xs:restriction>
 						</xs:simpleType>
 					</xs:element>
+					<xs:element name="s12" type="xs:string">
+						<xs:annotation>
+							<xs:documentation>12-значный номер счета</xs:documentation>
+						</xs:annotation>
+					</xs:element>
 				</xs:choice>
 				<xs:element name="orderNum">
 					<xs:annotation>
@@ -1573,9 +1731,19 @@
 						<xs:documentation>Сумма плательщика</xs:documentation>
 					</xs:annotation>
 				</xs:element>
+				<xs:element name="reserveNum" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Идентификатор резерва, за счет которого нужно провести документ</xs:documentation>
+					</xs:annotation>
+				</xs:element>
 				<xs:element name="PayeeAmount" type="FundsType">
 					<xs:annotation>
 						<xs:documentation>Сумма получателя</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="ExtraPayer" type="ExtraPay">
+					<xs:annotation>
+						<xs:documentation>Дополнительно пополнить спец. счет </xs:documentation>
 					</xs:annotation>
 				</xs:element>
 				<xs:element name="ComAmount" type="FundsType" minOccurs="0">
@@ -1597,6 +1765,11 @@
 							<xs:maxLength value="2000"/>
 						</xs:restriction>
 					</xs:simpleType>
+				</xs:element>
+				<xs:element name="textComPay" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Назначение платежа документа комиссии</xs:documentation>
+					</xs:annotation>
 				</xs:element>
 				<xs:element name="ExtAttrList" type="ExtAttrListType" minOccurs="0">
 					<xs:annotation>
@@ -1635,6 +1808,31 @@
 						<xs:documentation>Курс операции</xs:documentation>
 					</xs:annotation>
 				</xs:element>
+				<xs:element name="fundsBlock" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Признак блокировки</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="ZhkhData" type="ZhkhDataType">
+					<xs:annotation>
+						<xs:documentation>Реквизиты платежа в ЖКХ</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="firstIncome" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Признак первого пополнения</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="docCodePlat" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Код назначения платежа</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="docComCodePlat" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Код назначения платежа для комиссии</xs:documentation>
+					</xs:annotation>
+				</xs:element>
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
@@ -1665,10 +1863,22 @@
 		</xs:annotation>
 		<xs:complexType>
 			<xs:sequence>
-				<xs:element ref="contractNum"/>
+				<xs:choice>
+					<xs:element ref="contractNum"/>
+					<xs:element name="s12" type="xs:string">
+						<xs:annotation>
+							<xs:documentation>12-значный номер счета</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:choice>
 				<xs:element name="Interval" type="IntervalType">
 					<xs:annotation>
 						<xs:documentation>Период</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="groupDocThroughtTrans" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Сгруппировать документы через транзитный счет</xs:documentation>
 					</xs:annotation>
 				</xs:element>
 			</xs:sequence>
@@ -1777,6 +1987,61 @@
 						<xs:documentation>Неиспользованный лимит кредита</xs:documentation>
 					</xs:annotation>
 				</xs:element>
+				<xs:element name="ExtraSaldo" type="FundsType">
+					<xs:annotation>
+						<xs:documentation>Остаток на сец. счете</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="BnkDepSaldo" type="FundsType">
+					<xs:annotation>
+						<xs:documentation>Остаток на вкладе</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="depositOtherBank" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>БИК банка, в котором клиенту открыт вклад в рамках Сервиса</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="limitEK" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>лимит ЭК</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="limitTotalComm" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Лимит суммарных обязательств</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="depositZay" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>номер заявки на открытие депозита в Банке-партнере </xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="SalProjectList" type="SalProjectListType">
+					<xs:annotation>
+						<xs:documentation>Зарплатные проекты</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="DepReserve" type="DepReserveType">
+					<xs:annotation>
+						<xs:documentation>Резервирование</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="depositZayState" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Состояние заявки</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="DebtSummTax" type="FundsType" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Сумма задолжности по комиссии за сервис %% на остаток  </xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="depositOtherBankAccount" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Номер счета депозита в банке-партнере</xs:documentation>
+					</xs:annotation>
+				</xs:element>
 			</xs:sequence>
 			<xs:attribute name="reqId" type="xs:string" use="required">
 				<xs:annotation>
@@ -1792,6 +2057,27 @@
 		<xs:complexType>
 			<xs:sequence>
 				<xs:element ref="clientId"/>
+				<xs:element name="needArchAcc" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Получить информацию об архивных счетах</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="needArchCard" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Получить информацию об архивных картах</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="needCreditInfo" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Получить информацию по заемным средствам</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="useBalancePC" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Учитывать баланс карты в ПЦ для подсчета значения тега AvailableFunds </xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element ref="filter" minOccurs="0"/>
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
@@ -1962,6 +2248,93 @@
 					<xs:documentation>Идентификатор запроса ReqClientConfirmOrder, на который сформирован данный ответ.</xs:documentation>
 				</xs:annotation>
 			</xs:attribute>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="ReqCreReserv">
+		<xs:annotation>
+			<xs:documentation>Запрос создания резерва под будущий документ</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:choice>
+					<xs:element name="accountNum" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>20-значный номер счета</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="s12" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>12-значный номер счета</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:choice>
+				<xs:element name="ReserveAmount" type="FundsType">
+					<xs:annotation>
+						<xs:documentation>сумма резерва</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="reservType" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>тип резерва (SNGCASHOUT или др.)</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="bnkBIK" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>БИК банка-партнера</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="depReconnect" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Переподключение</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="waitLA" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Дожидаться отзыва средств из ЛА</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="AnsCreReserv">
+		<xs:annotation>
+			<xs:documentation>Ответ на запрос создания резерва под будущий документ</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="reserveNum" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Идентификатор созданного резерва</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:sequence>
+			<xs:attribute name="reqId" type="xs:string"/>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="ReqDelReserv">
+		<xs:annotation>
+			<xs:documentation>Запрос удаления резерва</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="reserveNum" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Идентификатор созданного резерва</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="AnsDelReserv">
+		<xs:annotation>
+			<xs:documentation>Ответ на запрос удаления резерва</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:simpleContent>
+				<xs:extension base="xs:string">
+					<xs:attribute name="reqId" type="xs:string"/>
+				</xs:extension>
+			</xs:simpleContent>
 		</xs:complexType>
 	</xs:element>
 	<!--Интерфейс взаимодействия с системой Telebank (3-й этап, планируется к реализации)-->
@@ -2266,68 +2639,7 @@
 							</xs:restriction>
 						</xs:simpleType>
 					</xs:element>
-					<xs:element name="CardInfo" minOccurs="0">
-						<xs:annotation>
-							<xs:documentation>Параметры карты</xs:documentation>
-						</xs:annotation>
-						<xs:complexType>
-							<xs:sequence>
-								<xs:element name="typeCardProduct" minOccurs="0">
-									<xs:annotation>
-										<xs:documentation>Тип карточного продукта:
-CREDIT</xs:documentation>
-									</xs:annotation>
-									<xs:simpleType>
-										<xs:restriction base="xs:string">
-											<xs:maxLength value="30"/>
-										</xs:restriction>
-									</xs:simpleType>
-								</xs:element>
-								<xs:element name="cardStatus" minOccurs="0">
-									<xs:annotation>
-										<xs:documentation>Статус карты в ПЦ</xs:documentation>
-									</xs:annotation>
-									<xs:simpleType>
-										<xs:restriction base="xs:string">
-											<xs:maxLength value="30"/>
-										</xs:restriction>
-									</xs:simpleType>
-								</xs:element>
-								<xs:element name="cardConfidenceLevel" minOccurs="0">
-									<xs:annotation>
-										<xs:documentation>Уровень доверия привязываемой карты:
-'L' - низкий,
-'N' - нормальный</xs:documentation>
-									</xs:annotation>
-									<xs:simpleType>
-										<xs:restriction base="xs:string">
-											<xs:length value="1"/>
-										</xs:restriction>
-									</xs:simpleType>
-								</xs:element>
-								<xs:element name="nameEmbossing" minOccurs="0">
-									<xs:annotation>
-										<xs:documentation>Строка эмбоссирования</xs:documentation>
-									</xs:annotation>
-									<xs:simpleType>
-										<xs:restriction base="xs:string">
-											<xs:maxLength value="40"/>
-										</xs:restriction>
-									</xs:simpleType>
-								</xs:element>
-								<xs:element name="deliveryAddress" minOccurs="0">
-									<xs:annotation>
-										<xs:documentation>Адрес доставки карты</xs:documentation>
-									</xs:annotation>
-									<xs:simpleType>
-										<xs:restriction base="xs:string">
-											<xs:maxLength value="2000"/>
-										</xs:restriction>
-									</xs:simpleType>
-								</xs:element>
-							</xs:sequence>
-						</xs:complexType>
-					</xs:element>
+					<xs:element ref="CardInfo" minOccurs="0"/>
 				</xs:choice>
 				<xs:element name="reqInitiator" minOccurs="0">
 					<xs:annotation>
@@ -2364,6 +2676,16 @@ CngProduct - Смена карточного продукта</xs:documentation>
 						</xs:restriction>
 					</xs:simpleType>
 				</xs:element>
+				<xs:element name="bpaIssue" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Агент, выполнивший операцию</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:maxLength value="30"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
@@ -2382,7 +2704,181 @@ CngProduct - Смена карточного продукта</xs:documentation>
 			</xs:attribute>
 		</xs:complexType>
 	</xs:element>
+	<xs:element name="ReqInfoForPAN">
+		<xs:annotation>
+			<xs:documentation>Запрос основных параметров карты</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="cardNum"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="AnsInfoForPAN">
+		<xs:annotation>
+			<xs:documentation>Ответ на ReqInfoForPAN</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="clientId"/>
+				<xs:element name="cardID" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>идентификатор (ID) карты</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="notifyPhone" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>номер телефона, на который подключено СМС-информирование</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="s12" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>12-ти значный номер счета карты</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element ref="contractNum"/>
+				<xs:element name="filialID" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Идентификатор филиала договора, к которому привязана карта;</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="cur" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>цифровой код валюты счета карты</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:sequence>
+			<xs:attribute name="reqId" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Идентификатор запроса ReqInfoForPAN, на который сформирован данный ответ</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="ReqAccBySubj">
+		<xs:annotation>
+			<xs:documentation>Получение карточного счета клиента</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="clientId"/>
+				<xs:element name="preferCur" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Валюта, с  которой желательно вернуть счет</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="AnsAccBySubj">
+		<xs:annotation>
+			<xs:documentation>Ответ на запрос получение карточного счета клиента</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="s12" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>12-ти значный счет</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element ref="cur"/>
+				<xs:element name="dogId" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Идентификатор договора</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="nns" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>20-ти значный счет</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:sequence>
+			<xs:attribute name="reqId" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Идентификатор запроса, на который сформирован данный ответ.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+		</xs:complexType>
+	</xs:element>
 	<!--Вспомогательные глобальные элементы и типы-->
+	<xs:element name="CreditInfo">
+		<xs:annotation>
+			<xs:documentation>Информация о заемных средствах</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="CreditLimit" type="FundsType" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Текущий лимит кредита</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="PercentRate" type="xs:decimal">
+					<xs:annotation>
+						<xs:documentation>Процентная ставка</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="AllDebts" type="FundsType" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Полная задолженность по кредиту</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="OverdueSum" type="FundsType" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Сумма просроченной задолженности</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="CalcPercent" type="FundsType">
+					<xs:annotation>
+						<xs:documentation>Рассчитанные проценты</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="accOpenRsvStatus" type="xs:string">
+		<xs:annotation>
+			<xs:documentation>Состояние резервирования открываемых счетов</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="AccOpenRsvParams">
+		<xs:annotation>
+			<xs:documentation>Параметры резервирования данных для открытия счетов</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="enableRsv" type="xs:boolean" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Использование резервирования (true/false)</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="useRsvExtId" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Использование ранее созданного резерва - внешний номер резерва</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="periodRsv" type="xs:integer" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Период резервирования (дни)</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="redemSettlementAcc">
+		<xs:annotation>
+			<xs:documentation>Расчетный счет для гашения (12-й системный номер)</xs:documentation>
+		</xs:annotation>
+		<xs:simpleType>
+			<xs:restriction base="xs:string">
+				<xs:length value="12"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	<xs:element name="dependentPercent" type="xs:decimal">
+		<xs:annotation>
+			<xs:documentation>Условно-зависимая ставка</xs:documentation>
+		</xs:annotation>
+	</xs:element>
 	<xs:element name="FrozenOperList">
 		<xs:annotation>
 			<xs:documentation>Список замороженных операций</xs:documentation>
@@ -2412,6 +2908,123 @@ CngProduct - Смена карточного продукта</xs:documentation>
 				<xs:annotation>
 					<xs:documentation>Наименование операции</xs:documentation>
 				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ZhkhDataType">
+		<xs:annotation>
+			<xs:documentation>Данные для платежа ЖКХ</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="paymentDocumentID">
+				<xs:annotation>
+					<xs:documentation>Идентификатор платежного документа</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="18"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="serviceID">
+				<xs:annotation>
+					<xs:documentation>Идентификатор жилищно-коммунальной услуги</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="13"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="unifiedAccountNumber">
+				<xs:annotation>
+					<xs:documentation>Единый лицевой счет</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="10"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="paymentDocumentNumber">
+				<xs:annotation>
+					<xs:documentation>Номер платежного документа, по которому внесена плата, присвоенный такому документу исполнителем в целях осуществления расчетов по внесению платы</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="30"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="accountNumber">
+				<xs:annotation>
+					<xs:documentation>Номер лицевого счета/Иной идентификатор плательщика</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="30"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="fIASHouseGuid">
+				<xs:annotation>
+					<xs:documentation>Глобальный уникальный идентификатор дома по ФИАС</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="36"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="apartment">
+				<xs:annotation>
+					<xs:documentation>Номер жилого помещения</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="10"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="placement">
+				<xs:annotation>
+					<xs:documentation>Номер комнаты жилого помещения</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="10"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="period">
+				<xs:annotation>
+					<xs:documentation>Период оплаты в формате  mm/yyyy</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="7"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="ownerInn">
+				<xs:annotation>
+					<xs:documentation>Инн собственника помещения.Обязательно для индивидуальных предпринимателей и организаций</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="12"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="ownerFIO">
+				<xs:annotation>
+					<xs:documentation>Фио собственника помещения. Обязательно для физ.лиц </xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="200"/>
+					</xs:restriction>
+				</xs:simpleType>
 			</xs:element>
 		</xs:sequence>
 	</xs:complexType>
@@ -2497,7 +3110,7 @@ CngProduct - Смена карточного продукта</xs:documentation>
 			</xs:element>
 			<xs:element name="payType" type="xs:string" minOccurs="0">
 				<xs:annotation>
-					<xs:documentation>Показатель типа платежа</xs:documentation>
+					<xs:documentation>Код выплат (110)</xs:documentation>
 				</xs:annotation>
 			</xs:element>
 			<xs:element name="custDepCode" type="xs:string" minOccurs="0">
@@ -2516,7 +3129,7 @@ CngProduct - Смена карточного продукта</xs:documentation>
 				</xs:annotation>
 				<xs:simpleType>
 					<xs:restriction base="xs:string">
-						<xs:maxLength value="20"/>
+						<xs:maxLength value="25"/>
 					</xs:restriction>
 				</xs:simpleType>
 			</xs:element>
@@ -2527,6 +3140,81 @@ CngProduct - Смена карточного продукта</xs:documentation>
 				<xs:simpleType>
 					<xs:restriction base="xs:string">
 						<xs:maxLength value="20"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="payerINN" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>ИНН плательщика</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="15"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="for3d_Type" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Тип субъекта, в пользу которого совершается платеж (ФЛ, ИП, ЮЛ)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:length value="3"/>
+						<xs:enumeration value="HUM">
+							<xs:annotation>
+								<xs:documentation source="Физическое лицо"/>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="ORG">
+							<xs:annotation>
+								<xs:documentation source="Юридическое лицо"/>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="IP">
+							<xs:annotation>
+								<xs:documentation source="Субъект малого и среднего предпринимательства"/>
+							</xs:annotation>
+						</xs:enumeration>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="for3d_Name" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Наименование субъекта, в пользу которого совершается платеж</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="200"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="for3d_HumNationality" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Гражданство (код страны ISO3) субъекта, в пользу которого совершается платеж</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="80"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="for3d_Resident" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Признак резидентности субъекта, в пользу которого совершается платеж</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="1"/>
+						<xs:enumeration value="0">
+							<xs:annotation>
+								<xs:documentation source="Нерезидент"/>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="1">
+							<xs:annotation>
+								<xs:documentation source="Резидент"/>
+							</xs:annotation>
+						</xs:enumeration>
 					</xs:restriction>
 				</xs:simpleType>
 			</xs:element>
@@ -2571,10 +3259,10 @@ CngProduct - Смена карточного продукта</xs:documentation>
 					</xs:restriction>
 				</xs:simpleType>
 			</xs:element>
-			<xs:element ref="cur"/>
+			<xs:element ref="cur" minOccurs="0"/>
 			<xs:element name="scale" minOccurs="0">
 				<xs:annotation>
-					<xs:documentation>Маштаб суммы. Amount надо делить на 10 в степени Scale; Amount может быть целым</xs:documentation>
+					<xs:documentation>Масштаб суммы. Amount надо делить на 10 в степени Scale; Amount может быть целым</xs:documentation>
 				</xs:annotation>
 				<xs:simpleType>
 					<xs:restriction base="xs:integer">
@@ -2667,6 +3355,7 @@ CngProduct - Смена карточного продукта</xs:documentation>
 				</xs:simpleType>
 			</xs:element>
 			<xs:element ref="Indicators" minOccurs="0"/>
+			<xs:element ref="UserdataList" minOccurs="0"/>
 		</xs:sequence>
 	</xs:complexType>
 	<xs:complexType name="OrgType">
@@ -2728,6 +3417,11 @@ CngProduct - Смена карточного продукта</xs:documentation>
 					</xs:restriction>
 				</xs:simpleType>
 			</xs:element>
+			<xs:element name="postIndex" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Почтовый индекс</xs:documentation>
+				</xs:annotation>
+			</xs:element>
 			<xs:element name="country" minOccurs="0">
 				<xs:annotation>
 					<xs:documentation>Страна</xs:documentation>
@@ -2737,21 +3431,6 @@ CngProduct - Смена карточного продукта</xs:documentation>
 						<xs:maxLength value="80"/>
 					</xs:restriction>
 				</xs:simpleType>
-			</xs:element>
-			<xs:element name="city" minOccurs="0">
-				<xs:annotation>
-					<xs:documentation>Город</xs:documentation>
-				</xs:annotation>
-				<xs:simpleType>
-					<xs:restriction base="xs:string">
-						<xs:maxLength value="80"/>
-					</xs:restriction>
-				</xs:simpleType>
-			</xs:element>
-			<xs:element name="postIndex" type="xs:string" minOccurs="0">
-				<xs:annotation>
-					<xs:documentation>Почтовый индекс</xs:documentation>
-				</xs:annotation>
 			</xs:element>
 			<xs:element name="region" minOccurs="0">
 				<xs:annotation>
@@ -2773,6 +3452,31 @@ CngProduct - Смена карточного продукта</xs:documentation>
 					</xs:restriction>
 				</xs:simpleType>
 			</xs:element>
+			<xs:element name="city" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Город</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="80"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Place" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Название населенного пункта</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="40"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="location" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Элемент планировочной структуры</xs:documentation>
+				</xs:annotation>
+			</xs:element>
 			<xs:element name="street" minOccurs="0">
 				<xs:annotation>
 					<xs:documentation>Улица</xs:documentation>
@@ -2793,9 +3497,24 @@ CngProduct - Смена карточного продукта</xs:documentation>
 					<xs:documentation>Корпус</xs:documentation>
 				</xs:annotation>
 			</xs:element>
+			<xs:element name="str" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Строение</xs:documentation>
+				</xs:annotation>
+			</xs:element>
 			<xs:element name="flat" type="xs:string" minOccurs="0">
 				<xs:annotation>
 					<xs:documentation>Квартира/комната</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="regionType" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Тип региона</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="districtType" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Тип района</xs:documentation>
 				</xs:annotation>
 			</xs:element>
 			<xs:element name="cityType" minOccurs="0">
@@ -2805,16 +3524,6 @@ CngProduct - Смена карточного продукта</xs:documentation>
 				<xs:simpleType>
 					<xs:restriction base="xs:string">
 						<xs:maxLength value="80"/>
-					</xs:restriction>
-				</xs:simpleType>
-			</xs:element>
-			<xs:element name="Place" minOccurs="0">
-				<xs:annotation>
-					<xs:documentation>Название населенного пункта</xs:documentation>
-				</xs:annotation>
-				<xs:simpleType>
-					<xs:restriction base="xs:string">
-						<xs:maxLength value="40"/>
 					</xs:restriction>
 				</xs:simpleType>
 			</xs:element>
@@ -2828,6 +3537,11 @@ CngProduct - Смена карточного продукта</xs:documentation>
 					</xs:restriction>
 				</xs:simpleType>
 			</xs:element>
+			<xs:element name="locationType" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Тип элемента планировочной структуры</xs:documentation>
+				</xs:annotation>
+			</xs:element>
 			<xs:element name="StreetType" minOccurs="0">
 				<xs:annotation>
 					<xs:documentation>Тип улицы</xs:documentation>
@@ -2837,6 +3551,16 @@ CngProduct - Смена карточного продукта</xs:documentation>
 						<xs:maxLength value="10"/>
 					</xs:restriction>
 				</xs:simpleType>
+			</xs:element>
+			<xs:element name="strType" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Тип строения</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="addr_string" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Адрес строкой</xs:documentation>
+				</xs:annotation>
 			</xs:element>
 		</xs:sequence>
 	</xs:complexType>
@@ -2869,39 +3593,59 @@ CngProduct - Смена карточного продукта</xs:documentation>
 		<xs:annotation>
 			<xs:documentation>Банковский счет</xs:documentation>
 		</xs:annotation>
-		<xs:sequence>
-			<xs:element name="owner">
-				<xs:annotation>
-					<xs:documentation>Владелец счета</xs:documentation>
-				</xs:annotation>
-				<xs:simpleType>
-					<xs:restriction base="xs:string">
-						<xs:maxLength value="255"/>
-					</xs:restriction>
-				</xs:simpleType>
-			</xs:element>
-			<xs:element ref="Bank" minOccurs="0"/>
-			<xs:element name="accNum">
-				<xs:annotation>
-					<xs:documentation>Номер лицевого счета</xs:documentation>
-				</xs:annotation>
-				<xs:simpleType>
-					<xs:restriction base="xs:string">
-						<xs:length value="20"/>
-					</xs:restriction>
-				</xs:simpleType>
-			</xs:element>
-			<xs:element name="inn" minOccurs="0">
-				<xs:annotation>
-					<xs:documentation>ИНН</xs:documentation>
-				</xs:annotation>
-				<xs:simpleType>
-					<xs:restriction base="xs:string">
-						<xs:maxLength value="50"/>
-					</xs:restriction>
-				</xs:simpleType>
-			</xs:element>
-		</xs:sequence>
+		<xs:choice>
+			<xs:sequence>
+				<xs:element name="owner">
+					<xs:annotation>
+						<xs:documentation>Владелец счета</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:maxLength value="255"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				<xs:element ref="Bank" minOccurs="0"/>
+				<xs:element name="accNum">
+					<xs:annotation>
+						<xs:documentation>Номер лицевого счета</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:length value="20"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				<xs:element name="inn" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>ИНН</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:maxLength value="50"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				<xs:element name="kpp" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>КПП</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:maxLength value="9"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+			</xs:sequence>
+			<xs:sequence>
+				<xs:element name="s12" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>12-ти значный счет</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element ref="cur" minOccurs="0"/>
+			</xs:sequence>
+		</xs:choice>
 	</xs:complexType>
 	<xs:complexType name="OrganizationType">
 		<xs:annotation>
@@ -2913,7 +3657,7 @@ CngProduct - Смена карточного продукта</xs:documentation>
 					<xs:documentation>Наименование</xs:documentation>
 				</xs:annotation>
 			</xs:element>
-			<xs:element name="inn" type="xs:string">
+			<xs:element name="inn" type="xs:string" minOccurs="0">
 				<xs:annotation>
 					<xs:documentation>ИНН</xs:documentation>
 				</xs:annotation>
@@ -2928,11 +3672,12 @@ CngProduct - Смена карточного продукта</xs:documentation>
 					<xs:documentation>Реальный адрес</xs:documentation>
 				</xs:annotation>
 			</xs:element>
-			<xs:element name="SettlementAccount" type="BankAccountType">
+			<xs:element name="SettlementAccount" type="BankAccountType" minOccurs="0">
 				<xs:annotation>
 					<xs:documentation>Расчетный счет</xs:documentation>
 				</xs:annotation>
 			</xs:element>
+			<xs:element ref="EmployeeList" minOccurs="0"/>
 		</xs:sequence>
 	</xs:complexType>
 	<xs:complexType name="ReturnItemType">
@@ -2955,6 +3700,16 @@ CngProduct - Смена карточного продукта</xs:documentation>
 					<xs:documentation>остаток задолженности</xs:documentation>
 				</xs:annotation>
 			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ReturnsType">
+		<xs:annotation>
+			<xs:documentation>График гашения</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element ref="ReturnItemChart" minOccurs="0"/>
+			<xs:element ref="InterestReturnItemChart" minOccurs="0"/>
+			<xs:element ref="CommReturnItemChart" minOccurs="0"/>
 		</xs:sequence>
 	</xs:complexType>
 	<xs:complexType name="BankContractType">
@@ -3017,9 +3772,25 @@ CngProduct - Смена карточного продукта</xs:documentation>
 					<xs:documentation>Средневзвешенная процентная ставка</xs:documentation>
 				</xs:annotation>
 			</xs:element>
+			<xs:element ref="dependentPercent" minOccurs="0"/>
 			<xs:element name="effectivePercent" type="xs:decimal" minOccurs="0">
 				<xs:annotation>
 					<xs:documentation>Эффективная процентная ставка</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="effectiveDependentPercent" type="xs:decimal" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>эффективная ставка для условно-зависимой ставки</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="effectiveMoneyTerms" type="xs:decimal" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Стоимость кредита в денежном выражении</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="effectiveDependentMT" type="xs:decimal" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Стоимость кредита в денежном выражении для условно-зависимой ставки</xs:documentation>
 				</xs:annotation>
 			</xs:element>
 			<xs:element name="lastProlong" type="xs:date" minOccurs="0">
@@ -3027,13 +3798,13 @@ CngProduct - Смена карточного продукта</xs:documentation>
 					<xs:documentation>Дата последнего перезаключения (пролонгации)</xs:documentation>
 				</xs:annotation>
 			</xs:element>
-			<xs:element name="basicCapitalPeriod">
+			<xs:element name="basicCapitalPeriod" minOccurs="0">
 				<xs:annotation>
 					<xs:documentation>Период капитализации по основной схеме</xs:documentation>
 				</xs:annotation>
 				<xs:simpleType>
 					<xs:restriction base="xs:string">
-						<xs:maxLength value="2"/>
+						<xs:maxLength value="30"/>
 					</xs:restriction>
 				</xs:simpleType>
 			</xs:element>
@@ -3079,6 +3850,31 @@ CngProduct - Смена карточного продукта</xs:documentation>
 						<xs:length value="20"/>
 					</xs:restriction>
 				</xs:simpleType>
+			</xs:element>
+			<xs:element name="AvailableFunds" type="FundsType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Доступные средства</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="closeDate" type="xs:date" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Дата закрытия договора</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="FreeFunds" type="FundsType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Свободные средства (не записанные на карту средства)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Deposit" type="FundsType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Остатки депозитного счета</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="SumHolds" type="FundsType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Общая сумма зарезервированных средств по всем картам договора</xs:documentation>
+				</xs:annotation>
 			</xs:element>
 		</xs:sequence>
 	</xs:complexType>
@@ -3188,6 +3984,11 @@ CngProduct - Смена карточного продукта</xs:documentation>
 					<xs:documentation>Время к дате проводки</xs:documentation>
 				</xs:annotation>
 			</xs:element>
+			<xs:element name="rate" type="xs:decimal" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Курс операции</xs:documentation>
+				</xs:annotation>
+			</xs:element>
 		</xs:sequence>
 	</xs:complexType>
 	<xs:complexType name="Currency">
@@ -3232,6 +4033,11 @@ CngProduct - Смена карточного продукта</xs:documentation>
 			<xs:documentation>Информация о платежной карте</xs:documentation>
 		</xs:annotation>
 		<xs:sequence>
+			<xs:element name="cardID" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Идентификатор (ID) карты</xs:documentation>
+				</xs:annotation>
+			</xs:element>
 			<xs:element ref="cardNum">
 				<xs:annotation>
 					<xs:documentation>Номер карты (ПАН)</xs:documentation>
@@ -3317,9 +4123,39 @@ CngProduct - Смена карточного продукта</xs:documentation>
 					<xs:documentation>EAN карты</xs:documentation>
 				</xs:annotation>
 			</xs:element>
+			<xs:element name="typeCard" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>тип карты (главная, дополнительная)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="dateCloseCard" type="xs:date" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>дата закрытия карты (для архивной карты)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="kindCard" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>вид карты (дебетовая, кредитная, с овердрафтом)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="productID" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Идентификатор карточного продукта</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="saldoPC" type="xs:decimal">
+				<xs:annotation>
+					<xs:documentation>Остаток на карте по данным ПЦ</xs:documentation>
+				</xs:annotation>
+			</xs:element>
 			<xs:element name="saldo" type="xs:decimal">
 				<xs:annotation>
 					<xs:documentation>Остаток на карте</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="cardAccID" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Идентификатор ЛА в РБС </xs:documentation>
 				</xs:annotation>
 			</xs:element>
 		</xs:sequence>
@@ -3430,6 +4266,129 @@ CngProduct - Смена карточного продукта</xs:documentation>
 			</xs:element>
 		</xs:sequence>
 	</xs:complexType>
+	<xs:element name="CardInfo">
+		<xs:annotation>
+			<xs:documentation>Параметры карты</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="typeCardProduct" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Тип карточного продукта:
+CREDIT</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:maxLength value="30"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				<xs:element name="cardStatusRBS" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>статус карты в РБС</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="cardStatus" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Статус карты в ПЦ</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:maxLength value="30"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				<xs:element name="cardConfidenceLevel" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Уровень доверия привязываемой карты:
+'L' - низкий,
+'N' - нормальный</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:length value="1"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				<xs:element name="nameEmbossing" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Строка эмбоссирования</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:maxLength value="40"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				<xs:element name="codeDeliveryService" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Служба доставки карты</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:maxLength value="64"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				<xs:element name="zoneDelivery" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Зона доставки карты</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:maxLength value="8"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				<xs:element name="deliveryAddress" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Адрес доставки карты</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:maxLength value="2000"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				<xs:element ref="BlockAddList" minOccurs="0"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="BlockAddList">
+		<xs:annotation>
+			<xs:documentation>Дополнительные параметры блокировки</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="blockAdd" maxOccurs="unbounded">
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:maxLength value="64"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="filter">
+		<xs:annotation>
+			<xs:documentation>Предоставить информацию по конкретному счету</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:choice>
+				<xs:element name="dogId" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>идентификатор договора</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="s12" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>12-ти значный номер счета</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:choice>
+		</xs:complexType>
+	</xs:element>
 	<xs:element name="Entity">
 		<xs:annotation>
 			<xs:documentation>Юридическое лицо</xs:documentation>
@@ -3488,6 +4447,35 @@ CngProduct - Смена карточного продукта</xs:documentation>
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
+	<xs:element name="TrfCard">
+		<xs:annotation>
+			<xs:documentation>Специальный тариф</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="code">
+					<xs:annotation>
+						<xs:documentation>Код тарифа</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:maxLength value="10"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				<xs:element name="dateEnd">
+					<xs:annotation>
+						<xs:documentation>Дата окончания (в формате YYYY-MM-DD)</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:maxLength value="10"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
 	<xs:element name="DDDogList">
 		<xs:annotation>
 			<xs:documentation>Список договоров ДД</xs:documentation>
@@ -3504,7 +4492,7 @@ CngProduct - Смена карточного продукта</xs:documentation>
 	</xs:element>
 	<xs:element name="FakturaLinkList">
 		<xs:annotation>
-			<xs:documentation>Список подключений к Faktura</xs:documentation>
+			<xs:documentation>Список подключений к Сервису Faktura</xs:documentation>
 		</xs:annotation>
 		<xs:complexType>
 			<xs:sequence>
@@ -3514,13 +4502,13 @@ CngProduct - Смена карточного продукта</xs:documentation>
 	</xs:element>
 	<xs:element name="FakturaLinkInfo">
 		<xs:annotation>
-			<xs:documentation>Подключение к Faktura</xs:documentation>
+			<xs:documentation>Подключение к Сервису Faktura</xs:documentation>
 		</xs:annotation>
 		<xs:complexType>
 			<xs:sequence>
 				<xs:element ref="isLite">
 					<xs:annotation>
-						<xs:documentation>Признак подключения к Faktura Lite. '1' - Подключение к Faktura Lite</xs:documentation>
+						<xs:documentation>Признак подключения к Сервису Faktura. '1' - Подключение к Сервису Faktura</xs:documentation>
 					</xs:annotation>
 				</xs:element>
 				<xs:element name="state">
@@ -3589,6 +4577,21 @@ CngProduct - Смена карточного продукта</xs:documentation>
 				<xs:element name="TaxResident" type="xs:boolean" minOccurs="0">
 					<xs:annotation>
 						<xs:documentation>Налоговый резидент</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="purpose_w_bank" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Цель отношений с банком</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="nature_w_bank" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Характер отношений с Банком</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="purpose_fin_act" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Цели финансово-хозяйственной деятельности</xs:documentation>
 					</xs:annotation>
 				</xs:element>
 			</xs:sequence>
@@ -3974,7 +4977,7 @@ CngProduct - Смена карточного продукта</xs:documentation>
 						</xs:restriction>
 					</xs:simpleType>
 				</xs:element>
-				<xs:element name="name" minOccurs="0">
+				<xs:element name="name">
 					<xs:annotation>
 						<xs:documentation>Наименование</xs:documentation>
 					</xs:annotation>
@@ -3984,7 +4987,7 @@ CngProduct - Смена карточного продукта</xs:documentation>
 						</xs:restriction>
 					</xs:simpleType>
 				</xs:element>
-				<xs:element name="city" minOccurs="0">
+				<xs:element name="city">
 					<xs:annotation>
 						<xs:documentation>Город</xs:documentation>
 					</xs:annotation>
@@ -4018,6 +5021,14 @@ CngProduct - Смена карточного продукта</xs:documentation>
 						<xs:restriction base="xs:string"/>
 					</xs:simpleType>
 				</xs:element>
+				<xs:element name="DogType" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Вид договора обеспечения (гарантия или поручительство)</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string"/>
+					</xs:simpleType>
+				</xs:element>
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
@@ -4026,14 +5037,31 @@ CngProduct - Смена карточного продукта</xs:documentation>
 			<xs:documentation>Поручитель</xs:documentation>
 		</xs:annotation>
 		<xs:complexType>
-			<xs:choice>
-				<xs:element ref="PrivateGuarantor"/>
-				<xs:element name="JuridicalGuarantor" type="OrganizationType">
+			<xs:sequence>
+				<xs:choice>
+					<xs:element ref="PrivateGuarantor"/>
+					<xs:element name="JuridicalGuarantor" type="OrganizationType">
+						<xs:annotation>
+							<xs:documentation>Поручитель - юридическое лицо</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:choice>
+				<xs:element name="setAccOwner" type="xs:boolean" minOccurs="0">
 					<xs:annotation>
-						<xs:documentation>Поручитель - юридическое лицо</xs:documentation>
+						<xs:documentation>Установить поручителя владельцем счета (true/false)</xs:documentation>
 					</xs:annotation>
 				</xs:element>
-			</xs:choice>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="EmployeeList">
+		<xs:annotation>
+			<xs:documentation>Список сотрудников организации</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="Person" maxOccurs="unbounded"/>
+			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
 	<xs:element name="PrivatePledge">
@@ -4042,9 +5070,23 @@ CngProduct - Смена карточного продукта</xs:documentation>
 		</xs:annotation>
 		<xs:complexType>
 			<xs:sequence>
-				<xs:element ref="Person"/>
-				<xs:element ref="PassportList" minOccurs="0"/>
-				<xs:element ref="formerFullName" minOccurs="0"/>
+				<xs:choice>
+					<xs:sequence>
+						<xs:element ref="Person"/>
+						<xs:element ref="PassportList" minOccurs="0"/>
+						<xs:element ref="formerFullName" minOccurs="0"/>
+					</xs:sequence>
+					<xs:element name="Organization" type="OrganizationType">
+						<xs:annotation>
+							<xs:documentation>Информация об организации</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:choice>
+				<xs:element name="setAccOwner" type="xs:boolean" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Установить залогодателя владельцем счета (true/false)</xs:documentation>
+					</xs:annotation>
+				</xs:element>
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
@@ -4099,6 +5141,16 @@ CngProduct - Смена карточного продукта</xs:documentation>
 		<xs:complexType>
 			<xs:sequence>
 				<xs:element ref="Param" maxOccurs="unbounded"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="ObjPledgeExtInfo">
+		<xs:annotation>
+			<xs:documentation>Доп информация по объекту залога(для системы)</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="ParamList"/>
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
@@ -4207,7 +5259,11 @@ CngProduct - Смена карточного продукта</xs:documentation>
 					</xs:simpleType>
 				</xs:element>
 				<xs:element ref="juridicalNum" minOccurs="0"/>
-				<xs:element ref="ObjPledge" minOccurs="0"/>
+				<xs:element ref="ObjPledge" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Объект залога из справочника ZAL_OBJ</xs:documentation>
+					</xs:annotation>
+				</xs:element>
 				<xs:element ref="ObjPledgeInfo" minOccurs="0"/>
 				<xs:element ref="InsuranceDogList" minOccurs="0"/>
 				<xs:element name="DogStatus" minOccurs="0">
@@ -4215,6 +5271,7 @@ CngProduct - Смена карточного продукта</xs:documentation>
 						<xs:restriction base="xs:string"/>
 					</xs:simpleType>
 				</xs:element>
+				<xs:element ref="ObjPledgeExtInfo" minOccurs="0"/>
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
@@ -4245,18 +5302,6 @@ CngProduct - Смена карточного продукта</xs:documentation>
 						<xs:restriction base="xs:string"/>
 					</xs:simpleType>
 				</xs:element>
-			</xs:sequence>
-		</xs:complexType>
-	</xs:element>
-	<xs:element name="Returns">
-		<xs:annotation>
-			<xs:documentation>Плановые гашения</xs:documentation>
-		</xs:annotation>
-		<xs:complexType>
-			<xs:sequence>
-				<xs:element ref="ReturnItemChart" minOccurs="0"/>
-				<xs:element ref="InterestReturnItemChart" minOccurs="0"/>
-				<xs:element ref="CommReturnItemChart" minOccurs="0"/>
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
@@ -4860,6 +5905,11 @@ CngProduct - Смена карточного продукта</xs:documentation>
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
+	<xs:element name="mcc" type="xs:string">
+		<xs:annotation>
+			<xs:documentation>mcc код из транзакции</xs:documentation>
+		</xs:annotation>
+	</xs:element>
 	<xs:element name="TransHoldListItem">
 		<xs:annotation>
 			<xs:documentation>Зарезервированная для транзакции сумма</xs:documentation>
@@ -4938,16 +5988,6 @@ CngProduct - Смена карточного продукта</xs:documentation>
 						</xs:restriction>
 					</xs:simpleType>
 				</xs:element>
-				<xs:element name="city" minOccurs="0">
-					<xs:annotation>
-						<xs:documentation>Город, населенный пункт</xs:documentation>
-					</xs:annotation>
-					<xs:simpleType>
-						<xs:restriction base="xs:string">
-							<xs:maxLength value="80"/>
-						</xs:restriction>
-					</xs:simpleType>
-				</xs:element>
 				<xs:element name="region" minOccurs="0">
 					<xs:annotation>
 						<xs:documentation>Регион (область, край, республика)</xs:documentation>
@@ -4958,6 +5998,11 @@ CngProduct - Смена карточного продукта</xs:documentation>
 						</xs:restriction>
 					</xs:simpleType>
 				</xs:element>
+				<xs:element name="regionType" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Тип региона</xs:documentation>
+					</xs:annotation>
+				</xs:element>
 				<xs:element name="district" minOccurs="0">
 					<xs:annotation>
 						<xs:documentation>Район</xs:documentation>
@@ -4967,6 +6012,26 @@ CngProduct - Смена карточного продукта</xs:documentation>
 							<xs:maxLength value="80"/>
 						</xs:restriction>
 					</xs:simpleType>
+				</xs:element>
+				<xs:element name="districtType" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Тип района</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="city" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Город, населенный пункт</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:maxLength value="80"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				<xs:element name="cityType" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Тип города</xs:documentation>
+					</xs:annotation>
 				</xs:element>
 				<xs:element name="place" minOccurs="0">
 					<xs:annotation>
@@ -4987,6 +6052,21 @@ CngProduct - Смена карточного продукта</xs:documentation>
 							<xs:maxLength value="10"/>
 						</xs:restriction>
 					</xs:simpleType>
+				</xs:element>
+				<xs:element name="location" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Эл. планировочной структуры</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="locationType" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Тип эл. планировочной структуры</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="addr_string" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>адрес строкой</xs:documentation>
+					</xs:annotation>
 				</xs:element>
 			</xs:sequence>
 		</xs:complexType>
@@ -5051,6 +6131,7 @@ X - символ римского исчисления</xs:documentation>
 					</xs:annotation>
 				</xs:element>
 				<xs:element ref="Contract"/>
+				<xs:element ref="CreditInfo" minOccurs="0"/>
 				<xs:element ref="CardInfoList"/>
 				<xs:element ref="FrozenOperList" minOccurs="0"/>
 				<xs:element ref="ZK_CardInfoList"/>
@@ -5134,6 +6215,7 @@ X - символ римского исчисления</xs:documentation>
 						<xs:documentation>Наименование карточной программы</xs:documentation>
 					</xs:annotation>
 				</xs:element>
+				<xs:element ref="mcc"/>
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
@@ -5873,6 +6955,274 @@ X - символ римского исчисления</xs:documentation>
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
+	<xs:complexType name="QualCreditType">
+		<xs:annotation>
+			<xs:documentation>Настройки, добавляемые на кредитный договор</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element ref="KR_PAYMENT" minOccurs="0"/>
+			<xs:element ref="KR_PAYMENT_DELAY" minOccurs="0"/>
+			<xs:element ref="KR_PAYMENT_WAIT" minOccurs="0"/>
+			<xs:element ref="KR_SCHEDULE_ONLY_PERC" minOccurs="0"/>
+			<xs:element ref="LGOT_K" minOccurs="0"/>
+			<xs:element ref="LGOT_P" minOccurs="0"/>
+			<xs:element ref="LGOT_R" minOccurs="0"/>
+			<xs:element ref="KR_SCHEDULE_PERC" minOccurs="0"/>
+			<xs:element ref="KR_SCHEDULE_REST_AMOUNT" minOccurs="0"/>
+			<xs:element ref="KR_SCHEDULE_FIRST_PERIOD" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="KR_PAYMENT">
+		<xs:annotation>
+			<xs:documentation>Настройка "Обязательный платеж по ссуде"</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="type" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Тип: L,Ссудная задолженность;A,Полная задолженность;F,По алгоритму банка</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="perc" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Процент</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="proc" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Процедура</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="KR_PAYMENT_DELAY">
+		<xs:annotation>
+			<xs:documentation>Настройка "Обязательный платеж по ссуде - задержка выноса на просрочку"</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="type_period" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Единица измерения интервалов: M,Месяцы;H,Полумесяцы;C,Декады;W,Недели;D,Дни</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="count_period" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Количество интервалов</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="KR_PAYMENT_WAIT">
+		<xs:annotation>
+			<xs:documentation>Настройка "Обязательный платеж по ссуде - период ожидания уплаты"</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="type_period" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Единица измерения интервалов: M,Месяцы;H,Полумесяцы;C,Декады;W,Недели;D,Дни</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="count_period" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Количество интервалов</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="KR_SCHEDULE_ONLY_PERC">
+		<xs:annotation>
+			<xs:documentation>Настройка "График гашения - число периодов уплаты только процентов"</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="type" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Тип: -,Уплата только процентов;+,Первый платеж не ранее следующего месяца</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="count_period" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Количество периодов</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="KR_SCHEDULE_PERC">
+		<xs:annotation>
+			<xs:documentation>Настройка "Правило определения процентных периодов для графика гашения"</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="type" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Тип: M,Предыдущий календарный месяц;H,Платежный период без сдвига по выходным</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="KR_SCHEDULE_REST_AMOUNT">
+		<xs:annotation>
+			<xs:documentation>Настройка "Сумма остаточного платежа"</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="amount" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Сумма</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="KR_SCHEDULE_FIRST_PERIOD">
+		<xs:annotation>
+			<xs:documentation>Настройка "Длительность первого платежного периода по графику гашения"</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="count_period" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Количество дней в периоде</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="LGOT_K">
+		<xs:annotation>
+			<xs:documentation>Настройка "Льготный коэффициент к проценту кредитования"</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="k_cash" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Коэффициент для нал.</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="k_nocash" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Коэффициент для безнал.</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="LGOT_R">
+		<xs:annotation>
+			<xs:documentation>Настройка "Отмена льготного коэффициента к проценту кредитования"</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="type_period" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Единица измерения интервалов: D,Дни;M,Месяцы</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="count_period" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Количество интервалов</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="LGOT_P">
+		<xs:annotation>
+			<xs:documentation>Настройка "Период действия льготного коэффициента к проценту кредитования"</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="rule" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Правило определения границ льготного периода:A,От даты появления задолженности;B,От начала расчетного периода;E,От конца расчетного периода</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="type_period" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Единица измерения интервалов: D,Дни;M,Месяцы;H,Полумесяцы;C,Декады;W,Недели</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="count_period" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Количество интервалов</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="check_weekend" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Учитывать выходные дни: N – Не учитывать; Y – Сдвиг окончания периода с выходного на следующий рабочий день.</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:complexType name="SalProjectListType">
+		<xs:annotation>
+			<xs:documentation>Список зарплатных проектов</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="SalProject" type="xs:string" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Действующий протокол з\п пополнения</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="UserdataList">
+		<xs:annotation>
+			<xs:documentation>Список дополнительных данных клиента </xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="Userdata" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="Userdata">
+		<xs:annotation>
+			<xs:documentation>Дополнительные данные клиента </xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="F_Name" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Имя поля subj$userdata.f_name</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="F_Desc" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Описание поля subj$userdata.f_desc</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="F_Type" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Тип поля subj$userdata.f_type</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="C_Num" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Номер столбца subj$userdata.c_num</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="R_Num" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Номер строки subj$userdata.r_num</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="F_Value" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Значения поля subj$userdata.f_value</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
 	<!--Интерфейс взаимодействия с Direct Debit-->
 	<xs:element name="BankDD">
 		<xs:annotation>
@@ -6264,7 +7614,7 @@ X - символ римского исчисления</xs:documentation>
 	<!--Интерфейс взаимодействия с дистанционными сервисами-->
 	<xs:element name="ReqFakturaLink">
 		<xs:annotation>
-			<xs:documentation>Запрос на подключение к Faktura-Lite</xs:documentation>
+			<xs:documentation>Запрос на подключение к Сервису Faktura</xs:documentation>
 		</xs:annotation>
 		<xs:complexType>
 			<xs:sequence>
@@ -6290,12 +7640,17 @@ X - символ римского исчисления</xs:documentation>
 					<xs:element ref="CodeWordLink" minOccurs="0"/>
 					<xs:element ref="LoginLink" minOccurs="0"/>
 				</xs:choice>
+				<xs:element name="freeDocRgt" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Право на формирование документов свободного формата</xs:documentation>
+					</xs:annotation>
+				</xs:element>
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
 	<xs:element name="AnsFakturaLink">
 		<xs:annotation>
-			<xs:documentation>Ответ на запрос подключения к Faktura-Lite</xs:documentation>
+			<xs:documentation>Ответ на запрос подключения к Сервису Faktura</xs:documentation>
 		</xs:annotation>
 		<xs:complexType>
 			<xs:attribute name="reqId" type="xs:string" use="required">
@@ -6307,7 +7662,7 @@ X - символ римского исчисления</xs:documentation>
 	</xs:element>
 	<xs:element name="ReqFakturaUpdate">
 		<xs:annotation>
-			<xs:documentation>Запрос на изменение параметров подключения к Faktura-Lite</xs:documentation>
+			<xs:documentation>Запрос на изменение параметров подключения к Сервису Faktura</xs:documentation>
 		</xs:annotation>
 		<xs:complexType>
 			<xs:sequence>
@@ -6315,7 +7670,7 @@ X - символ римского исчисления</xs:documentation>
 				<xs:element ref="phone" minOccurs="0"/>
 				<xs:element name="renewPassword" minOccurs="0">
 					<xs:annotation>
-						<xs:documentation>Признак автоматичекого пересоздания пароля в Faktura Lite. '1' - Пересоздать.</xs:documentation>
+						<xs:documentation>Признак автоматического пересоздания пароля к Сервису Faktura. '1' - Пересоздать.</xs:documentation>
 					</xs:annotation>
 					<xs:simpleType>
 						<xs:restriction base="xs:string">
@@ -6329,7 +7684,7 @@ X - символ римского исчисления</xs:documentation>
 	</xs:element>
 	<xs:element name="AnsFakturaUpdate">
 		<xs:annotation>
-			<xs:documentation>Ответ на запрос изменение параметров подключения к Faktura-Lite</xs:documentation>
+			<xs:documentation>Ответ на запрос изменение параметров подключения к Сервису Faktura</xs:documentation>
 		</xs:annotation>
 		<xs:complexType>
 			<xs:attribute name="reqId" type="xs:string" use="required">
@@ -7308,6 +8663,11 @@ X - символ римского исчисления</xs:documentation>
 		<xs:complexType>
 			<xs:sequence>
 				<xs:element ref="cardNns"/>
+				<xs:element name="subjID" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Идентификатор клиента</xs:documentation>
+					</xs:annotation>
+				</xs:element>
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
@@ -7337,6 +8697,11 @@ X - символ римского исчисления</xs:documentation>
 				<xs:element name="comSum" type="FundsType" minOccurs="0">
 					<xs:annotation>
 						<xs:documentation>Сумма расчитанной комиссии</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="subjID" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Идентификатор клиента</xs:documentation>
 					</xs:annotation>
 				</xs:element>
 			</xs:sequence>
@@ -7408,7 +8773,7 @@ X - символ римского исчисления</xs:documentation>
 		</xs:annotation>
 		<xs:complexType>
 			<xs:sequence>
-				<xs:element name="reqInitiator" form="qualified">
+				<xs:element name="reqInitiator" form="qualified" minOccurs="0">
 					<xs:annotation>
 						<xs:documentation>Инициатор запроса подключения</xs:documentation>
 					</xs:annotation>
@@ -7418,8 +8783,22 @@ X - символ римского исчисления</xs:documentation>
 						</xs:restriction>
 					</xs:simpleType>
 				</xs:element>
-				<xs:element ref="finprodId" minOccurs="0"/>
-				<xs:element ref="periodId" minOccurs="0"/>
+				<xs:choice>
+					<xs:element ref="finprodId" minOccurs="0"/>
+					<xs:element name="vvklId" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Идентификатор вида вклада</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:choice>
+				<xs:choice>
+					<xs:element ref="periodId" minOccurs="0"/>
+					<xs:element name="periodDays" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Длина периода в днях</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:choice>
 				<xs:choice>
 					<xs:element ref="cardNns"/>
 					<xs:element ref="DogParameters"/>
@@ -7436,6 +8815,12 @@ X - символ римского исчисления</xs:documentation>
 						</xs:restriction>
 					</xs:simpleType>
 				</xs:element>
+				<xs:element name="nnsVneshPr" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Номер счета процентов для привязки к депозиту</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element ref="TransComplDep" minOccurs="0"/>
 				<xs:element name="mobPhone" minOccurs="0">
 					<xs:annotation>
 						<xs:documentation>Мобильный телефон для привязки к деп. договору - атрибут NOTIFY_PHONE</xs:documentation>
@@ -7453,6 +8838,17 @@ X - символ римского исчисления</xs:documentation>
 					<xs:simpleType>
 						<xs:restriction base="xs:string">
 							<xs:maxLength value="150"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				<xs:element ref="redemSettlementAcc" minOccurs="0"/>
+				<xs:element name="bpaIssue" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Агент, выполнивший операцию</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:maxLength value="30"/>
 						</xs:restriction>
 					</xs:simpleType>
 				</xs:element>
@@ -7641,7 +9037,79 @@ X - символ римского исчисления</xs:documentation>
 			<xs:attribute name="reqID" type="xs:string" use="required"/>
 		</xs:complexType>
 	</xs:element>
-
+	<xs:element name="ReqZayForDep">
+		<xs:annotation>
+			<xs:documentation>Заявка на открытие вклада</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="cardEAN"/>
+				<xs:element ref="accountNum"/>
+				<xs:element name="numDogBnk" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Номер договора в банке-партнере</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="numAccBnk" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Номер счета в банке-партнере</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="bnkBIK" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>БИК банка-партнера</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="minSum" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Сумма первоначального взноса</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="panCardBnk" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>PAN карты в банке-партнере</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="depReconnect" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Переподключение</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element ref="Passport"/>
+				<xs:element name="Address" type="AddressType"/>
+				<xs:element name="Sex" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Пол</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="bpaIssue" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Агент, выполнивший операцию</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:maxLength value="30"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="AnsZayForDep">
+		<xs:annotation>
+			<xs:documentation>Ответ на заявку на открытие вклада</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="status" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Состояние заявки на открытие вклада</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:sequence>
+			<xs:attribute name="reqID" type="xs:string"/>
+		</xs:complexType>
+	</xs:element>
 	<xs:element name="ReqCardStatusInfo">
 		<xs:annotation>
 			<xs:documentation>Запрос о статусе карты</xs:documentation>
@@ -7661,7 +9129,6 @@ X - символ римского исчисления</xs:documentation>
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
-
 	<xs:element name="AnsCardStatusInfo">
 		<xs:annotation>
 			<xs:documentation>Ответ на запрос о статусе карты</xs:documentation>
@@ -7682,8 +9149,6 @@ X - символ римского исчисления</xs:documentation>
 			<xs:attribute name="reqID" type="xs:string" use="required"/>
 		</xs:complexType>
 	</xs:element>
-
-
 	<!--====-->
 	<xs:element name="DogParameters">
 		<xs:annotation>
@@ -7692,7 +9157,7 @@ X - символ римского исчисления</xs:documentation>
 		<xs:complexType>
 			<xs:sequence>
 				<xs:element ref="clientId"/>
-				<xs:element ref="cur"/>
+				<xs:element ref="cur" minOccurs="0"/>
 				<xs:element name="filialId" minOccurs="0">
 					<xs:annotation>
 						<xs:documentation>Идентификатор филиала в ЦФТ-Ритейл Банк. По умолчанию равен 'M'</xs:documentation>
@@ -7729,6 +9194,11 @@ X - символ римского исчисления</xs:documentation>
 							<xs:length value="1"/>
 						</xs:restriction>
 					</xs:simpleType>
+				</xs:element>
+				<xs:element ref="TrfCard" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Специальный тариф</xs:documentation>
+					</xs:annotation>
 				</xs:element>
 			</xs:sequence>
 		</xs:complexType>
@@ -7852,7 +9322,7 @@ X - символ римского исчисления</xs:documentation>
 	</xs:element>
 	<xs:element name="isLite">
 		<xs:annotation>
-			<xs:documentation>Признак подключения к Faktura Lite. '1' - Подключаться к Faktura Lite</xs:documentation>
+			<xs:documentation>Признак подключения к Сервису Faktura. '1' - Подключаться к Сервису Faktura</xs:documentation>
 		</xs:annotation>
 		<xs:simpleType>
 			<xs:restriction base="xs:string">
@@ -7876,11 +9346,29 @@ X - символ римского исчисления</xs:documentation>
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
+	<xs:complexType name="ExtraPay">
+		<xs:annotation>
+			<xs:documentation>Дополнительно произвести платеж</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="Amount" type="FundsType"/>
+			<xs:element name="text" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Назначение платежа</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
 	<xs:complexType name="ZK_CardInfo">
 		<xs:annotation>
 			<xs:documentation>Информация о карте ЗК</xs:documentation>
 		</xs:annotation>
 		<xs:sequence>
+			<xs:element name="cardID" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Идентификатор (ID) карты</xs:documentation>
+				</xs:annotation>
+			</xs:element>
 			<xs:element name="ISO" type="xs:string">
 				<xs:annotation>
 					<xs:documentation>Номер ISO карты</xs:documentation>
@@ -7893,7 +9381,27 @@ X - символ римского исчисления</xs:documentation>
 			</xs:element>
 			<xs:element name="application" type="xs:string">
 				<xs:annotation>
-					<xs:documentation>Наименование приложения (базовое, fast, онлайн)</xs:documentation>
+					<xs:documentation>Наименование приложения (base, fast)/ тип карты (online)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="dateCloseCard" type="xs:date" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>дата закрытия карты (для архивной карты)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="kindCard" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>вид карты (дебетовая, кредитная, с овердрафтом)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="state" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>статус карты</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="contractID" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Идентификатор группы карт</xs:documentation>
 				</xs:annotation>
 			</xs:element>
 			<xs:element name="cardHolderName" type="xs:string">
@@ -7917,5 +9425,185 @@ X - символ римского исчисления</xs:documentation>
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
+	<xs:complexType name="DepReserveType">
+		<xs:annotation>
+			<xs:documentation>Резервирование</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="ReserveAmount" type="FundsType">
+				<xs:annotation>
+					<xs:documentation>Cумма резерва</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="TransComplDep">
+		<xs:annotation>
+			<xs:documentation>Параметры перечисления средств по окончанию срока договора</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="prolongCount" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Количество пролонгаций до перевода средств</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="nnsTransfer" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Номер счета, на который переводить средства</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:complexType name="dependentPercDeltaListType">
+		<xs:annotation>
+			<xs:documentation>Значение ежегодного снижения условно-зависимой ставки </xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="dependentPercDelta" type="dependentPercDeltaType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Cнижение</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="dependentPercDeltaType">
+		<xs:annotation>
+			<xs:documentation>Значение ежегодного снижения условно-зависимой ставки </xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="periodNum" type="xs:decimal">
+				<xs:annotation>
+					<xs:documentation>Порядковый номер периода снижения</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="delta" type="xs:decimal" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Величина снижения</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="AnsMarkBankrot">
+		<xs:annotation>
+			<xs:documentation>Ответ на запрос пометки клиента банкротом</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:attribute name="reqId" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Идентификатор запроса ReqMarkInfo, на который сформирован данный ответ.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="ReqMarkBankrot">
+		<xs:annotation>
+			<xs:documentation>Пометка клиента банкротом</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="Bankrot" type="BankrotType">
+					<xs:annotation>
+						<xs:documentation>Сведения о должнике</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="BankrotInfo" type="BankrotInfoType">
+					<xs:annotation>
+						<xs:documentation>Информация о  банкротстве</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:complexType name="BankrotPersonType">
+		<xs:annotation>
+			<xs:documentation>Сведения о должнике физ лице </xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="Id" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Идентификатор банкрота физ. лица в информационной системе ЕФРСБ.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="RbsId" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Идентификатор Клиента в Системе РБС</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="FirstName" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Имя</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="MiddleName" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Отчество</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="LastName" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Фамилия</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Address" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Адрес</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Birthdate" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Дата рождения</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Birthplace" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Место рождения</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="BankrotType">
+		<xs:annotation>
+			<xs:documentation>Сведения о должнике</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="BankrotType" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Тип должника</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="BankrotPerson" type="BankrotPersonType">
+				<xs:annotation>
+					<xs:documentation>Сведения о должнике физ. лице</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="BankrotInfoType">
+		<xs:annotation>
+			<xs:documentation>Информация о  банкротстве</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="StateBankrot" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Стадия банкротства.
+1 – означает реструктуризация долгов
+2- означает реализация имущества
+3 – означает мировое соглашение
+</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="DecisionID" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Тип решения о банкротстве  - идентификатор.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="DecisionName" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Тип решения о банкротстве  - наименование.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
 </xs:schema>
-
